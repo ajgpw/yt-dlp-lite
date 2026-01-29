@@ -28,8 +28,6 @@ from ..compat import (
     urllib_req_to_req,
 )
 from ..cookies import LenientSimpleCookie
-from ..downloader.f4m import get_base_url, remove_encrypted_media
-from ..downloader.hls import HlsFD
 from ..globals import plugin_ies_overrides
 from ..networking import HEADRequest, Request
 from ..networking.exceptions import (

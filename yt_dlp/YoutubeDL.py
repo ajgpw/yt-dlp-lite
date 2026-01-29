@@ -28,8 +28,6 @@ from .cache import Cache
 from .compat import urllib  # isort: split
 from .compat import urllib_req_to_req
 from .cookies import CookieLoadError, LenientSimpleCookie, load_cookies
-from .downloader import FFmpegFD, get_suitable_downloader, shorten_protocol_name
-from .downloader.rtmp import rtmpdump_version
 from .extractor import gen_extractor_classes, get_info_extractor, import_extractors
 from .extractor.common import UnsupportedURLIE
 from .globals import (
@@ -56,21 +54,6 @@ from .networking.exceptions import (
 )
 from .networking.impersonate import ImpersonateRequestHandler, ImpersonateTarget
 from .plugins import directories as plugin_directories, load_all_plugins
-from .postprocessor import (
-    EmbedThumbnailPP,
-    FFmpegFixupDuplicateMoovPP,
-    FFmpegFixupDurationPP,
-    FFmpegFixupM3u8PP,
-    FFmpegFixupM4aPP,
-    FFmpegFixupStretchedPP,
-    FFmpegFixupTimestampPP,
-    FFmpegMergerPP,
-    FFmpegPostProcessor,
-    FFmpegVideoConvertorPP,
-    MoveFilesAfterDownloadPP,
-    get_postprocessor,
-)
-from .postprocessor.ffmpeg import resolve_mapping as resolve_recode_mapping
 from .update import (
     REPOSITORY,
     _get_system_deprecation,
@@ -193,6 +176,21 @@ def _catch_unsafe_extension_error(func):
                 f'If you believe this is an error{bug_reports_message(",")}')
 
     return wrapper
+
+
+def shorten_protocol_name(protocol):
+    """Shorten protocol name for display"""
+    if not protocol:
+        return ''
+    # Simple mapping for common protocols
+    protocol_map = {
+        'http': 'http',
+        'https': 'https',
+        'rtmp': 'rtmp',
+        'm3u8': 'm3u8',
+        'http_dash': 'dash',
+    }
+    return protocol_map.get(protocol, protocol[:4])
 
 
 class YoutubeDL:

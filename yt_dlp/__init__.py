@@ -15,23 +15,9 @@ import re
 import traceback
 
 from .cookies import SUPPORTED_BROWSERS, SUPPORTED_KEYRINGS, CookieLoadError
-from .downloader.external import get_external_downloader
 from .extractor import list_extractor_classes
 from .networking.impersonate import ImpersonateTarget
 from .globals import IN_CLI, plugin_dirs
-from .options import parseOpts
-from .plugins import load_all_plugins as _load_all_plugins
-from .postprocessor import (
-    FFmpegExtractAudioPP,
-    FFmpegMergerPP,
-    FFmpegPostProcessor,
-    FFmpegSubtitlesConvertorPP,
-    FFmpegThumbnailsConvertorPP,
-    FFmpegVideoConvertorPP,
-    FFmpegVideoRemuxerPP,
-    MetadataFromFieldPP,
-    MetadataParserPP,
-)
 from .update import Updater
 from .utils import (
     NO_DEFAULT,
