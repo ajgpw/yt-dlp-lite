@@ -18,6 +18,8 @@ from .cookies import SUPPORTED_BROWSERS, SUPPORTED_KEYRINGS, CookieLoadError
 from .extractor import list_extractor_classes
 from .networking.impersonate import ImpersonateTarget
 from .globals import IN_CLI, plugin_dirs
+from .options import parseOpts
+from .plugins import load_all_plugins as _load_all_plugins
 from .update import Updater
 from .utils import (
     NO_DEFAULT,
@@ -56,6 +58,16 @@ from .utils._jsruntime import (
     QuickJsRuntime as _QuickJsRuntime,
 )
 from .YoutubeDL import YoutubeDL
+from .options import (
+    FFmpegMergerPP,
+    FFmpegExtractAudioPP,
+    FFmpegSubtitlesConvertorPP,
+    FFmpegThumbnailsConvertorPP,
+    FFmpegVideoRemuxerPP,
+    FFmpegVideoConvertorPP,
+    SponsorBlockPP,
+    DEFAULT_SPONSORBLOCK_CHAPTER_TITLE,
+)
 
 
 def _exit(status=0, *args):
@@ -726,7 +738,8 @@ def parse_options(argv=None):
     except ValueError as err:
         parser.error(f'{err}\n')
 
-    postprocessors = list(get_postprocessors(opts))
+    # Lite mode: skip postprocessor initialization to avoid requiring FFmpeg/plugins
+    postprocessors = []
 
     print_only = bool(opts.forceprint) and all(k not in opts.forceprint for k in POSTPROCESS_WHEN[3:])
     any_getting = any(getattr(opts, k) for k in (

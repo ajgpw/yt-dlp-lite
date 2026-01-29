@@ -62,6 +62,25 @@ from .update import (
     current_git_head,
     detect_variant,
 )
+from .options import (
+    FFmpegMergerPP,
+    FFmpegVideoConvertorPP,
+)
+
+
+# Minimal stub for postprocessor factory when postprocessor module is removed
+def get_postprocessor(key):
+    class _DummyPP:
+        SUPPORTED_EXTS = set()
+
+        def __init__(self, ydl, **kwargs):
+            pass
+        def set_downloader(self, dl):
+            self._downloader = dl
+        def run(self, info):
+            return info
+
+    return _DummyPP
 from .utils import (
     DEFAULT_OUTTMPL,
     IDENTITY,

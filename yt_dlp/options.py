@@ -10,6 +10,9 @@ import sys
 
 from .compat import compat_expanduser
 from .cookies import SUPPORTED_BROWSERS, SUPPORTED_KEYRINGS
+# Placeholder for external downloaders list (downloader removed in lite build)
+def list_external_downloaders():
+    return []
 from .update import UPDATE_SOURCES, detect_variant, is_non_updateable
 from .utils import (
     OUTTMPL_TYPES,
@@ -28,6 +31,48 @@ from .utils import (
     write_string,
 )
 from .version import CHANNEL, __version__
+
+# Minimal placeholders for removed postprocessor classes to keep option parsing working
+class FFmpegMergerPP:
+    SUPPORTED_EXTS = set()
+    available = False
+    def __init__(self, ydl, **kwargs):
+        self._downloader = None
+    def set_downloader(self, dl):
+        self._downloader = dl
+
+
+class FFmpegExtractAudioPP:
+    SUPPORTED_EXTS = {'mp3', 'm4a', 'aac'}
+    # allow 'best' as a valid selection in absence of full postprocessor support
+    FORMAT_RE = re.compile(r'^(?:best|' + '|'.join(sorted(SUPPORTED_EXTS)) + r')$')
+
+
+class FFmpegVideoRemuxerPP:
+    SUPPORTED_EXTS = set()
+    FORMAT_RE = re.compile(r'^$')
+
+
+class FFmpegVideoConvertorPP:
+    SUPPORTED_EXTS = set()
+    FORMAT_RE = re.compile(r'^$')
+
+
+class FFmpegSubtitlesConvertorPP:
+    SUPPORTED_EXTS = set()
+
+
+class FFmpegThumbnailsConvertorPP:
+    SUPPORTED_EXTS = set()
+    FORMAT_RE = re.compile(r'^$')
+
+
+class SponsorBlockPP:
+    CATEGORIES = {'sponsor': 'Sponsor'}
+    NON_SKIPPABLE_CATEGORIES = {}
+
+
+DEFAULT_SPONSORBLOCK_CHAPTER_TITLE = 'Sponsor'
 
 
 def parseOpts(overrideArguments=None, ignore_config_files='if_override'):  # noqa: N803
