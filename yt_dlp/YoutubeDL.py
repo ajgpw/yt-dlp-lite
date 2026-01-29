@@ -62,25 +62,10 @@ from .update import (
     current_git_head,
     detect_variant,
 )
-from .options import (
-    FFmpegMergerPP,
-    FFmpegVideoConvertorPP,
-)
 
 
-# Minimal stub for postprocessor factory when postprocessor module is removed
-def get_postprocessor(key):
-    class _DummyPP:
-        SUPPORTED_EXTS = set()
 
-        def __init__(self, ydl, **kwargs):
-            pass
-        def set_downloader(self, dl):
-            self._downloader = dl
-        def run(self, info):
-            return info
 
-    return _DummyPP
 from .utils import (
     DEFAULT_OUTTMPL,
     IDENTITY,
@@ -178,6 +163,50 @@ from .utils.networking import (
     std_headers,
 )
 from .version import CHANNEL, ORIGIN, RELEASE_GIT_HEAD, VARIANT, __version__
+
+# Lite build: minimal FFmpeg/Postprocessor stubs to avoid NameError
+class FFmpegPostProcessor:
+    class _ffmpeg_location_cls:
+        _value = None
+        @classmethod
+        def set(cls, v):
+            cls._value = v
+        @classmethod
+        def get(cls):
+            return cls._value
+
+    _ffmpeg_location = _ffmpeg_location_cls
+
+    @staticmethod
+    def get_versions_and_features(ydl):
+        return ({'ffmpeg': '', 'ffprobe': ''}, {})
+
+
+# Minimal stub for postprocessor factory when postprocessor module is removed
+def get_postprocessor(key):
+    class _DummyPP:
+        SUPPORTED_EXTS = set()
+
+        def __init__(self, ydl, **kwargs):
+            pass
+
+        def set_downloader(self, dl):
+            self._downloader = dl
+
+        def run(self, info):
+            return info
+
+    return _DummyPP
+
+
+# Minimal FFmpeg* postprocessor stubs for lite build
+class FFmpegMergerPP:
+    SUPPORTED_EXTS = set()
+    available = False
+    def __init__(self, ydl, **kwargs):
+        self._downloader = None
+    def set_downloader(self, dl):
+        self._downloader = dl
 
 if os.name == 'nt':
     import ctypes
@@ -3608,10 +3637,7 @@ class YoutubeDL:
                     downloader = downloader.FD_NAME if downloader else None
 
                     ext = info_dict.get('ext')
-                    postprocessed_by_ffmpeg = info_dict.get('requested_formats') or any((
-                        isinstance(pp, FFmpegVideoConvertorPP)
-                        and resolve_recode_mapping(ext, pp.mapping)[0] not in (ext, None)
-                    ) for pp in self._pps['post_process'])
+                    postprocessed_by_ffmpeg = bool(info_dict.get('requested_formats'))
 
                     if not postprocessed_by_ffmpeg:
                         ffmpeg_fixup(fd != FFmpegFD and ext == 'm4a'

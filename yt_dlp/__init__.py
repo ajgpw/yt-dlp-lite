@@ -59,12 +59,6 @@ from .utils._jsruntime import (
 )
 from .YoutubeDL import YoutubeDL
 from .options import (
-    FFmpegMergerPP,
-    FFmpegExtractAudioPP,
-    FFmpegSubtitlesConvertorPP,
-    FFmpegThumbnailsConvertorPP,
-    FFmpegVideoRemuxerPP,
-    FFmpegVideoConvertorPP,
     SponsorBlockPP,
     DEFAULT_SPONSORBLOCK_CHAPTER_TITLE,
 )
@@ -235,92 +229,22 @@ def validate_options(opts):
     for f in opts.format_sort:
         validate_regex('format sorting', f, FormatSorter.regex)
 
-    # Postprocessor formats
-    if opts.convertsubtitles == 'none':
-        opts.convertsubtitles = None
-    if opts.convertthumbnails == 'none':
-        opts.convertthumbnails = None
+    # FFmpeg/postprocessor formats: 無効化
+    opts.convertsubtitles = None
+    opts.convertthumbnails = None
+    opts.merge_output_format = None
+    opts.audioformat = None
+    opts.recodevideo = None
+    opts.remuxvideo = None
+    opts.audioquality = None
 
-    validate_regex('merge output format', opts.merge_output_format,
-                   r'({0})(/({0}))*'.format('|'.join(map(re.escape, FFmpegMergerPP.SUPPORTED_EXTS))))
-    validate_regex('audio format', opts.audioformat, FFmpegExtractAudioPP.FORMAT_RE)
-    validate_in('subtitle format', opts.convertsubtitles, FFmpegSubtitlesConvertorPP.SUPPORTED_EXTS)
-    validate_regex('thumbnail format', opts.convertthumbnails, FFmpegThumbnailsConvertorPP.FORMAT_RE)
-    validate_regex('recode video format', opts.recodevideo, FFmpegVideoConvertorPP.FORMAT_RE)
-    validate_regex('remux video format', opts.remuxvideo, FFmpegVideoRemuxerPP.FORMAT_RE)
-    if opts.audioquality:
-        opts.audioquality = opts.audioquality.strip('k').strip('K')
-        # int_or_none prevents inf, nan
-        validate_positive('audio quality', int_or_none(float_or_none(opts.audioquality), default=0))
-
-    # Retries
-    def parse_retries(name, value):
-        if value is None:
-            return None
-        elif value in ('inf', 'infinite'):
-            return float('inf')
-        try:
-            int_value = int(value)
-        except (TypeError, ValueError):
-            validate(False, f'{name} retry count', value)
-        validate_positive(f'{name} retry count', int_value)
-        return int_value
-
-    opts.retries = parse_retries('download', opts.retries)
-    opts.fragment_retries = parse_retries('fragment', opts.fragment_retries)
-    opts.extractor_retries = parse_retries('extractor', opts.extractor_retries)
-    opts.file_access_retries = parse_retries('file access', opts.file_access_retries)
-
-    # Retry sleep function
-    def parse_sleep_func(expr):
-        NUMBER_RE = r'\d+(?:\.\d+)?'
-        op, start, limit, step, *_ = (*tuple(re.fullmatch(
-            rf'(?:(linear|exp)=)?({NUMBER_RE})(?::({NUMBER_RE})?)?(?::({NUMBER_RE}))?',
-            expr.strip()).groups()), None, None)
-
-        if op == 'exp':
-            return lambda n: min(float(start) * (float(step or 2) ** n), float(limit or 'inf'))
-        else:
-            default_step = start if op or limit else 0
-            return lambda n: min(float(start) + float(step or default_step) * n, float(limit or 'inf'))
-
-    for key, expr in opts.retry_sleep.items():
-        if not expr:
-            del opts.retry_sleep[key]
-            continue
-        try:
-            opts.retry_sleep[key] = parse_sleep_func(expr)
-        except AttributeError:
-            raise ValueError(f'invalid {key} retry sleep expression {expr!r}')
-
-    # Bytes
-    def validate_bytes(name, value, strict_positive=False):
-        if value is None:
-            return None
-        numeric_limit = parse_bytes(value)
-        validate(numeric_limit is not None, name, value)
-        if strict_positive:
-            validate_positive(name, numeric_limit, True)
-        return numeric_limit
-
-    opts.ratelimit = validate_bytes('rate limit', opts.ratelimit, True)
-    opts.throttledratelimit = validate_bytes('throttled rate limit', opts.throttledratelimit)
-    opts.min_filesize = validate_bytes('min filesize', opts.min_filesize)
-    opts.max_filesize = validate_bytes('max filesize', opts.max_filesize)
-    opts.buffersize = validate_bytes('buffer size', opts.buffersize, True)
-    opts.http_chunk_size = validate_bytes('http chunk size', opts.http_chunk_size)
-
-    # Output templates
+    def get_postprocessors(opts):
+        # FFmpeg/postprocessor機能は全て無効化
+        return
     def validate_outtmpl(tmpl, msg):
         err = YoutubeDL.validate_outtmpl(tmpl)
         if err:
             raise ValueError(f'invalid {msg} "{tmpl}": {err}')
-
-    for k, tmpl in opts.outtmpl.items():
-        validate_outtmpl(tmpl, f'{k} output template')
-    for type_, tmpl_list in opts.forceprint.items():
-        for tmpl in tmpl_list:
-            validate_outtmpl(tmpl, f'{type_} print template')
     for type_, tmpl_list in opts.print_to_file.items():
         for tmpl, file in tmpl_list:
             validate_outtmpl(tmpl, f'{type_} print to file template')
@@ -764,11 +688,8 @@ def parse_options(argv=None):
         elif playlist_pps == [{'key': 'FFmpegConcat', 'only_multi_video': True, 'when': 'playlist'}]:
             opts.extract_flat = 'discard_in_playlist'
 
-    final_ext = (
-        opts.recodevideo if opts.recodevideo in FFmpegVideoConvertorPP.SUPPORTED_EXTS
-        else opts.remuxvideo if opts.remuxvideo in FFmpegVideoRemuxerPP.SUPPORTED_EXTS
-        else opts.audioformat if (opts.extractaudio and opts.audioformat in FFmpegExtractAudioPP.SUPPORTED_EXTS)
-        else None)
+    # FFmpeg-related postprocessing disabled in lite build
+    final_ext = None
 
     js_runtimes = {
         runtime.lower(): {'path': path} for runtime, path in (

@@ -32,40 +32,6 @@ from .utils import (
 )
 from .version import CHANNEL, __version__
 
-# Minimal placeholders for removed postprocessor classes to keep option parsing working
-class FFmpegMergerPP:
-    SUPPORTED_EXTS = set()
-    available = False
-    def __init__(self, ydl, **kwargs):
-        self._downloader = None
-    def set_downloader(self, dl):
-        self._downloader = dl
-
-
-class FFmpegExtractAudioPP:
-    SUPPORTED_EXTS = {'mp3', 'm4a', 'aac'}
-    # allow 'best' as a valid selection in absence of full postprocessor support
-    FORMAT_RE = re.compile(r'^(?:best|' + '|'.join(sorted(SUPPORTED_EXTS)) + r')$')
-
-
-class FFmpegVideoRemuxerPP:
-    SUPPORTED_EXTS = set()
-    FORMAT_RE = re.compile(r'^$')
-
-
-class FFmpegVideoConvertorPP:
-    SUPPORTED_EXTS = set()
-    FORMAT_RE = re.compile(r'^$')
-
-
-class FFmpegSubtitlesConvertorPP:
-    SUPPORTED_EXTS = set()
-
-
-class FFmpegThumbnailsConvertorPP:
-    SUPPORTED_EXTS = set()
-    FORMAT_RE = re.compile(r'^$')
-
 
 class SponsorBlockPP:
     CATEGORIES = {'sponsor': 'Sponsor'}
@@ -992,7 +958,7 @@ def create_parser():
         help=(
             'Containers that may be used when merging formats, separated by "/", e.g. "mp4/mkv". '
             'Ignored if no merge is required. '
-            f'(currently supported: {", ".join(sorted(FFmpegMergerPP.SUPPORTED_EXTS))})'))
+            '(currently supported: none)'))
     video_format.add_option(
         '--allow-unplayable-formats',
         action='store_true', dest='allow_unplayable_formats', default=False,
@@ -1166,7 +1132,7 @@ def create_parser():
             'Download only chapters that match the regular expression. '
             'A "*" prefix denotes time-range instead of chapter. Negative timestamps are calculated from the end. '
             '"*from-url" can be used to download between the "start_time" and "end_time" extracted from the URL. '
-            'Needs ffmpeg. This option can be used multiple times to download multiple sections, '
+            'This option can be used multiple times to download multiple sections, '
             'e.g. --download-sections "*10:15-inf" --download-sections "intro"'))
     downloader.add_option(
         '--downloader', '--external-downloader',
@@ -1189,13 +1155,13 @@ def create_parser():
         metavar='NAME:ARGS', dest='external_downloader_args', default={}, type='str',
         action='callback', callback=_dict_from_options_callback,
         callback_kwargs={
-            'allowed_keys': r'ffmpeg_[io]\d*|{}'.format('|'.join(map(re.escape, list_external_downloaders()))),
+            'allowed_keys': r'{}'.format('|'.join(map(re.escape, list_external_downloaders()))),
             'default_key': 'default',
             'process': shlex.split,
         }, help=(
             'Give these arguments to the external downloader. '
             'Specify the downloader name and the arguments separated by a colon ":". '
-            'For ffmpeg, arguments can be passed to different positions using the same syntax as --postprocessor-args. '
+            'For executables, arguments can be passed to different positions using the same syntax as --postprocessor-args. '
             'You can use this option multiple times to give different arguments to different downloaders '
             '(Alias: --external-downloader-args)'))
 
@@ -1649,25 +1615,25 @@ def create_parser():
     postproc.add_option(
         '-x', '--extract-audio',
         action='store_true', dest='extractaudio', default=False,
-        help='Convert video files to audio-only files (requires ffmpeg and ffprobe)')
+        help='Convert video files to audio-only files (not supported in lite build)')
     postproc.add_option(
         '--audio-format', metavar='FORMAT', dest='audioformat', default='best',
         help=(
             'Format to convert the audio to when -x is used. '
-            f'(currently supported: best (default), {", ".join(sorted(FFmpegExtractAudioPP.SUPPORTED_EXTS))}). '
+            '(currently supported: best (default)). '
             'You can specify multiple rules using similar syntax as --remux-video'))
     postproc.add_option(
         '--audio-quality', metavar='QUALITY',
         dest='audioquality', default='5',
         help=(
-            'Specify ffmpeg audio quality to use when converting the audio with -x. '
+            'Specify audio quality to use when converting the audio with -x. '
             'Insert a value between 0 (best) and 10 (worst) for VBR or a specific bitrate like 128K (default %default)'))
     postproc.add_option(
         '--remux-video',
         metavar='FORMAT', dest='remuxvideo', default=None,
         help=(
             'Remux the video into another container if necessary '
-            f'(currently supported: {", ".join(FFmpegVideoRemuxerPP.SUPPORTED_EXTS)}). '
+            '(currently supported: none). '
             'If the target container does not support the video/audio codec, remuxing will fail. You can specify multiple rules; '
             'e.g. "aac>m4a/mov>mp4/mkv" will remux aac to m4a, mov to mp4 and anything else to mkv'))
     postproc.add_option(
@@ -1824,14 +1790,14 @@ def create_parser():
         metavar='FORMAT', dest='convertsubtitles', default=None,
         help=(
             'Convert the subtitles to another format '
-            f'(currently supported: {", ".join(sorted(FFmpegSubtitlesConvertorPP.SUPPORTED_EXTS))}). '
+            '(currently supported: none). '
             'Use "--convert-subs none" to disable conversion (default) (Alias: --convert-subtitles)'))
     postproc.add_option(
         '--convert-thumbnails',
         metavar='FORMAT', dest='convertthumbnails', default=None,
         help=(
             'Convert the thumbnails to another format '
-            f'(currently supported: {", ".join(sorted(FFmpegThumbnailsConvertorPP.SUPPORTED_EXTS))}). '
+            '(currently supported: none). '
             'You can specify multiple rules using similar syntax as "--remux-video". '
             'Use "--convert-thumbnails none" to disable conversion (default)'))
     postproc.add_option(
